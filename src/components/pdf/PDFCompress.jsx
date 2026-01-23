@@ -1,3 +1,4 @@
+// PDF Compress Component - v1.0
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileArchive, Download, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
