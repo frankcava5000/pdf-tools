@@ -12,4 +12,9 @@ export default defineConfig({
   optimizeDeps: {
     include: ['pdf-lib', 'pdfjs-dist'],
   },
+  build: {
+    rollupOptions: {
+      external: ['pdf-lib'],
+    },
+  },
 });
