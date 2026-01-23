@@ -1,4 +1,4 @@
-// PDF Compress Component - v1.0
+// PDF Compress Component - v1.0 - Deploy fix
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileArchive, Download, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
