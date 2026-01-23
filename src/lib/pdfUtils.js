@@ -1,11 +1,13 @@
 import * as pdfjsLib from 'pdfjs-dist';
-// import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, PageBreak } from 'docx';
 import { saveAs } from 'file-saver';
-import JSZip from 'jszip';
 
-// Initialize PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+// Initialize PDF.js worker globally
+// This ensures any component using pdfjsLib has the worker configured
+if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+}
 
 export const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';
@@ -29,22 +31,24 @@ export const formatTime = (date) => {
 };
 
 // --- Core Helper: Load PDF.js Document ---
-const loadPdfJsDoc = async (file) => {
+export const loadPdfJsDoc = async (file) => {
   const arrayBuffer = await file.arrayBuffer();
-  return pdfjsLib.getDocument(arrayBuffer).promise;
+  // Using standard font data is helpful for rendering certain PDFs
+  return pdfjsLib.getDocument({
+    data: arrayBuffer,
+    cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+    cMapPacked: true,
+  }).promise;
 };
 
 // --- Core Helper: Load pdf-lib Document ---
-// const loadPdfLibDoc = async (file) => {
-//   const arrayBuffer = await file.arrayBuffer();
-//   return PDFDocument.load(arrayBuffer);
-// };
+const loadPdfLibDoc = async (file) => {
+  const arrayBuffer = await file.arrayBuffer();
+  return PDFDocument.load(arrayBuffer);
+};
 
 // 1. Compress PDF (Rasterize approach for client-side size reduction)
 export const compressPDF = async (file, level = 'medium') => {
-  // Temporarily disabled - requires pdf-lib
-  throw new Error('PDF compression temporarily disabled. Please try other tools.');
-  /*
   // Level: low (0.8 quality), medium (0.6 quality), high (0.4 quality)
   const qualityMap = { low: 0.8, medium: 0.6, high: 0.4 };
   const quality = qualityMap[level] || 0.6;
@@ -79,26 +83,18 @@ export const compressPDF = async (file, level = 'medium') => {
 
   const pdfBytes = await newPdfDoc.save();
   return new Blob([pdfBytes], { type: 'application/pdf' });
-  */
 };
 
 // 2. Add Password
 export const addPasswordToPDF = async (file, password) => {
-  // Temporarily disabled - requires pdf-lib
-  throw new Error('Password protection temporarily disabled. Please try other tools.');
-  /*
   const pdfDoc = await loadPdfLibDoc(file);
   pdfDoc.encrypt({ userPassword: password, ownerPassword: password });
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes], { type: 'application/pdf' });
-  */
 };
 
 // 3. Remove Password (requires providing the password first to open it)
 export const removePasswordFromPDF = async (file, password) => {
-  // Temporarily disabled - requires pdf-lib
-  throw new Error('Password removal temporarily disabled. Please try other tools.');
-  /*
   // pdf-lib's load method accepts a password option if it's encrypted
   const arrayBuffer = await file.arrayBuffer();
   // Try loading. If it fails, password might be wrong
@@ -110,7 +106,6 @@ export const removePasswordFromPDF = async (file, password) => {
   } catch (e) {
      throw new Error("Invalid password or failed to decrypt.");
   }
-  */
 };
 
 // 4. Extract Images
@@ -120,8 +115,18 @@ export const extractImagesFromPDF = async (file, onProgress) => {
 
   for (let i = 1; i <= pdfJsDoc.numPages; i++) {
     if (onProgress) onProgress(i, pdfJsDoc.numPages);
+    const page = await pdfJsDoc.getPage(i);
+    const ops = await page.getOperatorList();
     
-    // Convert Page to Image (Reliable)
+    for (let j = 0; j < ops.fnArray.length; j++) {
+      if (ops.fnArray[j] === pdfjsLib.OPS.paintImageXObject) {
+        try {
+           // Complex extraction omitted for stability, falling back to render
+        } catch (e) { console.error(e); }
+      }
+    }
+    
+    // Fallback/Default behavior: Convert Page to Image (Reliable)
     const viewport = page.getViewport({ scale: 2 });
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -154,14 +159,9 @@ export const extractTextFromPDF = async (file) => {
 
 // 6. Rotate Pages
 export const rotatePDFPages = async (file, pageIndices, angle) => {
-  // Temporarily disabled - requires pdf-lib
-  throw new Error('Page rotation temporarily disabled. Please try other tools.');
-  /*
-  // pageIndices is array of 0-based indices. angle is degrees (90, 180, etc)
   const pdfDoc = await loadPdfLibDoc(file);
   const pages = pdfDoc.getPages();
   
-  // If pageIndices is empty/null, rotate ALL
   const targetIndices = (pageIndices && pageIndices.length > 0) 
     ? pageIndices 
     : pages.map((_, i) => i);
@@ -175,16 +175,10 @@ export const rotatePDFPages = async (file, pageIndices, angle) => {
 
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes], { type: 'application/pdf' });
-  */
 };
 
 // 7. Crop Pages
 export const cropPDFPages = async (file, pageIndices, cropBox) => {
-  // Temporarily disabled - requires pdf-lib
-  throw new Error('Page cropping temporarily disabled. Please try other tools.');
-  /*
-  // cropBox: { x, y, width, height } in PDF points
-  // Note: PDF coordinates start from bottom-left usually.
   const pdfDoc = await loadPdfLibDoc(file);
   const pages = pdfDoc.getPages();
   
@@ -202,15 +196,10 @@ export const cropPDFPages = async (file, pageIndices, cropBox) => {
 
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes], { type: 'application/pdf' });
-  */
 };
 
 // 8. Watermark
 export const addWatermarkToPDF = async (file, config) => {
-  // Temporarily disabled - requires pdf-lib
-  throw new Error('Watermark temporarily disabled. Please try other tools.');
-  /*
-  // config: { type: 'text'|'image', text?, imageFile?, color?, opacity?, size?, position? }
   const pdfDoc = await loadPdfLibDoc(file);
   const pages = pdfDoc.getPages();
   const { type, text, imageFile, opacity = 0.5, size = 50, color = {r:0, g:0, b:0} } = config;
@@ -220,7 +209,7 @@ export const addWatermarkToPDF = async (file, config) => {
     pages.forEach(page => {
       const { width, height } = page.getSize();
       page.drawText(text || 'Watermark', {
-        x: width / 2 - (text.length * size) / 4, // Rough center
+        x: width / 2 - (text.length * size) / 4,
         y: height / 2,
         size: size,
         font: font,
@@ -233,9 +222,9 @@ export const addWatermarkToPDF = async (file, config) => {
     const imgBuffer = await imageFile.arrayBuffer();
     let image;
     if (imageFile.type === 'image/png') image = await pdfDoc.embedPng(imgBuffer);
-    else image = await pdfDoc.embedJpg(imgBuffer); // Assume jpg for others
+    else image = await pdfDoc.embedJpg(imgBuffer);
 
-    const imgDims = image.scale(0.5); // Default scale
+    const imgDims = image.scale(0.5);
 
     pages.forEach(page => {
       const { width, height } = page.getSize();
@@ -251,17 +240,15 @@ export const addWatermarkToPDF = async (file, config) => {
 
   const pdfBytes = await pdfDoc.save();
   return new Blob([pdfBytes], { type: 'application/pdf' });
-  */
 };
 
-
-// Legacy functions from previous steps (re-exporting for compatibility)
-export const pdfToWord = async (file, options = {}) => {
+export const pdfToWord = async (file, options = {}, onStatusUpdate = () => {}) => {
   const { includeImages = false } = options;
   const pdfJsDoc = await loadPdfJsDoc(file);
   const docSections = [];
 
   for (let i = 1; i <= pdfJsDoc.numPages; i++) {
+     if (onStatusUpdate) onStatusUpdate({ status: 'generating', message: `Processing page ${i}/${pdfJsDoc.numPages}...` });
      const page = await pdfJsDoc.getPage(i);
      const textContent = await page.getTextContent();
      const pageText = textContent.items.map(item => item.str).join(' ');
@@ -277,23 +264,3 @@ export const pdfToWord = async (file, options = {}) => {
 };
 
 export const pdfToWordWithImages = async () => { /* ... simplified placeholder ... */ };
-
-// Placeholder functions for other tools
-export const pdfToImages = async (pdfFile) => {
-  console.log('Converting PDF to images:', pdfFile);
-  return [];
-};
-
-export const mergePDFs = async (pdfFiles) => {
-  console.log('Merging PDFs:', pdfFiles);
-  return null;
-};
-
-export const splitPDF = async (pdfFile, pages) => {
-  console.log('Splitting PDF:', pdfFile, pages);
-  return null;
-};
-
-export const pdfToDocx = async (pdfFile, options) => {
-  return pdfToWord(pdfFile, options);
-};
