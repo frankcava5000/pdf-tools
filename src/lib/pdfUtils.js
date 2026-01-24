@@ -1,5 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
+// import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, PageBreak } from 'docx';
 import { saveAs } from 'file-saver';
 
