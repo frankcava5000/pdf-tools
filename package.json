@@ -26,9 +26,7 @@
     "docx": "^8.5.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^11.15.0",
-    "jszip": "^3.10.1",
     "lucide-react": "^0.469.0",
-    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -54,8 +52,10 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "globals": "^15.14.0",
     "postcss": "^8.4.49",
+    "stylelint": "^17.0.0",
+    "stylelint-config-standard": "^40.0.0",
     "tailwindcss": "^3.4.17",
     "terser": "^5.37.0",
-    "vite": "^5.4.21"
+    "vite": "^4.4.5"
   }
 }
